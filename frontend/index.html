@@ -123,19 +123,21 @@
             background-color: rgba(227, 242, 253, 0.8);
             border-color: #2196f3;
         }
-        .connection-line {
+        .connection-svg {
             position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             pointer-events: none;
             z-index: 0;
-            border-top: 2px solid #a0a0a0;
+        }
+        .connection-line {
+            stroke: #a0a0a0;
+            stroke-width: 2;
         }
         .connection-dot {
-            position: absolute;
-            width: 6px;
-            height: 6px;
-            background-color: #2196f3;
-            border-radius: 50%;
-            z-index: 1;
+            fill: #2196f3;
         }
         .editor-toolbar {
             display: flex;
@@ -176,6 +178,7 @@
         <div class="workspace" id="workspace-1"></div>
         <div class="workspace" id="workspace-2"></div>
         <div id="drop-zone">Drag & Drop Files Here</div>
+        <svg class="connection-svg"></svg>
     </div>
 
     <script>
@@ -188,6 +191,7 @@
         const workspaces = document.querySelectorAll('.workspace');
         const dropZone = document.getElementById('drop-zone');
         const workspaceContainer = document.getElementById('workspace-container');
+        const connectionSvg = document.querySelector('.connection-svg');
 
         workspaceContainer.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -206,6 +210,7 @@
             document.querySelector('.workspace.active').classList.remove('active');
             workspaces[index].classList.add('active');
             currentWorkspace = index;
+            updateAllConnections();
         }
 
         function handleFileDrop(e) {
@@ -316,16 +321,24 @@
         }
 
         function createConnection(doc, note) {
-            const connection = document.createElement('div');
-            connection.className = 'connection-line';
-            const startDot = document.createElement('div');
-            startDot.className = 'connection-dot';
-            const endDot = document.createElement('div');
-            endDot.className = 'connection-dot';
-            workspaces[currentWorkspace].appendChild(connection);
-            workspaces[currentWorkspace].appendChild(startDot);
-            workspaces[currentWorkspace].appendChild(endDot);
-            note.connection = { line: connection, startDot: startDot, endDot: endDot };
+            const connection = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            const startDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            const endDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+
+            line.setAttribute('class', 'connection-line');
+            startDot.setAttribute('class', 'connection-dot');
+            endDot.setAttribute('class', 'connection-dot');
+
+            startDot.setAttribute('r', '3');
+            endDot.setAttribute('r', '3');
+
+            connection.appendChild(line);
+            connection.appendChild(startDot);
+            connection.appendChild(endDot);
+
+            connectionSvg.appendChild(connection);
+            note.connection = { group: connection, line: line, startDot: startDot, endDot: endDot };
             updateConnection(doc, note);
         }
 
@@ -344,37 +357,28 @@
                 y: noteRect.top + noteRect.height / 2
             };
 
-            const angleRad = Math.atan2(noteCenter.y - docCenter.y, noteCenter.x - docCenter.x);
+            const angle = Math.atan2(noteCenter.y - docCenter.y, noteCenter.x - docCenter.x);
+            const docX = docCenter.x + Math.cos(angle) * (docRect.width / 2);
+            const docY = docCenter.y + Math.sin(angle) * (docRect.height / 2);
+            const noteX = noteCenter.x - Math.cos(angle) * (noteRect.width / 2);
+            const noteY = noteCenter.y - Math.sin(angle) * (noteRect.height / 2);
 
-            let docX, docY, noteX, noteY;
+            const path = `M${docX},${docY} C${docX + (noteX - docX) / 2},${docY} ${docX + (noteX - docX) / 2},${noteY} ${noteX},${noteY}`;
+            line.setAttribute('d', path);
 
-            // Determine connection points
-            if (Math.abs(Math.cos(angleRad)) > Math.abs(Math.sin(angleRad))) {
-                // Horizontal connection
-                docX = (Math.cos(angleRad) > 0) ? docRect.right : docRect.left;
-                docY = docCenter.y;
-                noteX = (Math.cos(angleRad) > 0) ? noteRect.left : noteRect.right;
-                noteY = noteCenter.y;
-            } else {
-                // Vertical connection
-                docX = docCenter.x;
-                docY = (Math.sin(angleRad) > 0) ? docRect.bottom : docRect.top;
-                noteX = noteCenter.x;
-                noteY = (Math.sin(angleRad) > 0) ? noteRect.top : noteRect.bottom;
-            }
+            startDot.setAttribute('cx', docX);
+            startDot.setAttribute('cy', docY);
+            endDot.setAttribute('cx', noteX);
+            endDot.setAttribute('cy', noteY);
+        }
 
-            const distance = Math.hypot(noteX - docX, noteY - docY);
-
-            line.style.width = `${distance}px`;
-            line.style.left = `${docX}px`;
-            line.style.top = `${docY}px`;
-            line.style.transform = `rotate(${angleRad}rad)`;
-
-            startDot.style.left = `${docX - 3}px`;
-            startDot.style.top = `${docY - 3}px`;
-
-            endDot.style.left = `${noteX - 3}px`;
-            endDot.style.top = `${noteY - 3}px`;
+        function updateAllConnections() {
+            const notes = workspaces[currentWorkspace].querySelectorAll('.note');
+            notes.forEach(note => {
+                if (note.connection) {
+                    updateConnection(note.docElement, note);
+                }
+            });
         }
 
         function placeElement(element) {
@@ -458,12 +462,13 @@
         function removeNote(closeButton) {
             const note = closeButton.closest ? closeButton.closest('.note') : closeButton;
             if (note.connection) {
-                note.connection.line.remove();
-                note.connection.startDot.remove();
-                note.connection.endDot.remove();
+                note.connection.group.remove();
             }
             note.remove();
         }
+
+        window.addEventListener('resize', updateAllConnections);
+        workspaceContainer.addEventListener('scroll', updateAllConnections);
     </script>
 </body>
 </html>
