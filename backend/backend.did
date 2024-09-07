@@ -1,0 +1,26 @@
+type Workspace = 
+ record {
+   id: nat;
+   name: text;
+ };
+type Note = 
+ record {
+   content: text;
+   documentId: nat;
+   id: nat;
+ };
+type Document = 
+ record {
+   content: opt blob;
+   id: nat;
+   name: text;
+   workspaceId: nat;
+ };
+service : {
+  addDocument: (nat, text, blob) -> (nat);
+  addNote: (nat, text) -> (nat);
+  createWorkspace: (text) -> (nat);
+  getDocuments: (nat) -> (vec Document) query;
+  getNotes: (nat) -> (vec Note) query;
+  getWorkspaces: () -> (vec Workspace) query;
+}
