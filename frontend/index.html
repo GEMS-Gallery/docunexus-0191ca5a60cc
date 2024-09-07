@@ -58,8 +58,8 @@
             min-height: 200px;
         }
         .note {
-            width: 200px;
-            height: 150px;
+            width: 300px;
+            height: 250px;
         }
         .header {
             padding: 8px 12px;
@@ -137,7 +137,16 @@
             border-radius: 50%;
             z-index: 1;
         }
+        .DraftEditor-root {
+            height: 100%;
+            overflow-y: auto;
+        }
+        .DraftEditor-editorContainer {
+            height: 100%;
+        }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/draft-js/0.11.7/Draft.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/draftjs-to-html/0.9.1/draftjs-to-html.min.js"></script>
 </head>
 <body>
     <div id="tab-container">
@@ -246,7 +255,7 @@
                         <span class="control close" onclick="removeNote(this)">×</span>
                     </div>
                 </div>
-                <div class="content" contenteditable="true">Enter your note here...</div>
+                <div class="content"></div>
                 <div class="resize-handle"></div>
             `;
 
@@ -259,6 +268,23 @@
             note.addEventListener('mousedown', () => bringToFront(note));
 
             note.docElement = docElement;
+
+            // Initialize Draft.js editor
+            const content = note.querySelector('.content');
+            const editorState = Draft.EditorState.createEmpty();
+            const editor = React.createElement(Draft.Editor, {
+                editorState: editorState,
+                onChange: (newState) => {
+                    editor.props.editorState = newState;
+                    const contentState = newState.getCurrentContent();
+                    const rawContent = Draft.convertToRaw(contentState);
+                    const html = draftToHtml(rawContent);
+                    // Here you would typically save the HTML content to your backend
+                    console.log('Note content updated:', html);
+                }
+            });
+            ReactDOM.render(editor, content);
+
             return note;
         }
 

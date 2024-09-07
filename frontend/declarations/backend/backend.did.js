@@ -22,6 +22,7 @@ export const idlFactory = ({ IDL }) => {
     'getDocuments' : IDL.Func([IDL.Nat], [IDL.Vec(Document)], ['query']),
     'getNotes' : IDL.Func([IDL.Nat], [IDL.Vec(Note)], ['query']),
     'getWorkspaces' : IDL.Func([], [IDL.Vec(Workspace)], ['query']),
+    'updateNote' : IDL.Func([IDL.Nat, IDL.Text], [], []),
   });
 };
 export const init = ({ IDL }) => { return []; };

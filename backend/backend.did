@@ -23,4 +23,5 @@ service : {
   getDocuments: (nat) -> (vec Document) query;
   getNotes: (nat) -> (vec Note) query;
   getWorkspaces: () -> (vec Workspace) query;
+  updateNote: (nat, text) -> ();
 }

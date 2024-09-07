@@ -21,6 +21,7 @@ export interface _SERVICE {
   'getDocuments' : ActorMethod<[bigint], Array<Document>>,
   'getNotes' : ActorMethod<[bigint], Array<Note>>,
   'getWorkspaces' : ActorMethod<[], Array<Workspace>>,
+  'updateNote' : ActorMethod<[bigint, string], undefined>,
 }
 export declare const idlFactory: IDL.InterfaceFactory;
 export declare const init: (args: { IDL: typeof IDL }) => IDL.Type[];

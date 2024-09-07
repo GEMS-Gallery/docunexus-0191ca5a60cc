@@ -83,6 +83,22 @@ actor {
     Buffer.toArray(docNotes)
   };
 
+  public func updateNote(id: Nat, content: Text) : async () {
+    switch (notes.get(id)) {
+      case (null) {
+        // Note not found, handle error
+      };
+      case (?note) {
+        let updatedNote: Note = {
+          id = note.id;
+          documentId = note.documentId;
+          content = content;
+        };
+        notes.put(id, updatedNote);
+      };
+    };
+  };
+
   system func preupgrade() {
     // Implement if needed
   };
