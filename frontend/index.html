@@ -137,16 +137,23 @@
             border-radius: 50%;
             z-index: 1;
         }
-        .DraftEditor-root {
-            height: 100%;
-            overflow-y: auto;
+        .editor-toolbar {
+            display: flex;
+            gap: 5px;
+            padding: 5px;
+            background-color: #f5f5f5;
         }
-        .DraftEditor-editorContainer {
-            height: 100%;
+        .editor-toolbar button {
+            padding: 2px 5px;
+            background-color: #e0e0e0;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .editor-toolbar button:hover {
+            background-color: #d0d0d0;
         }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/draft-js/0.11.7/Draft.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/draftjs-to-html/0.9.1/draftjs-to-html.min.js"></script>
 </head>
 <body>
     <div id="tab-container">
@@ -255,7 +262,12 @@
                         <span class="control close" onclick="removeNote(this)">×</span>
                     </div>
                 </div>
-                <div class="content"></div>
+                <div class="editor-toolbar">
+                    <button onclick="formatDoc('bold')"><b>B</b></button>
+                    <button onclick="formatDoc('italic')"><i>I</i></button>
+                    <button onclick="formatDoc('underline')"><u>U</u></button>
+                </div>
+                <div class="content" contenteditable="true"></div>
                 <div class="resize-handle"></div>
             `;
 
@@ -268,24 +280,11 @@
             note.addEventListener('mousedown', () => bringToFront(note));
 
             note.docElement = docElement;
-
-            // Initialize Draft.js editor
-            const content = note.querySelector('.content');
-            const editorState = Draft.EditorState.createEmpty();
-            const editor = React.createElement(Draft.Editor, {
-                editorState: editorState,
-                onChange: (newState) => {
-                    editor.props.editorState = newState;
-                    const contentState = newState.getCurrentContent();
-                    const rawContent = Draft.convertToRaw(contentState);
-                    const html = draftToHtml(rawContent);
-                    // Here you would typically save the HTML content to your backend
-                    console.log('Note content updated:', html);
-                }
-            });
-            ReactDOM.render(editor, content);
-
             return note;
+        }
+
+        function formatDoc(command) {
+            document.execCommand(command, false, null);
         }
 
         function addNoteToDocument(button) {
